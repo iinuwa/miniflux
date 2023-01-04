@@ -48,6 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
     onClick("a[data-action=search]", (event) => setFocusToSearchInput(event));
     onClick("a[data-action=markPageAsRead]", (event) => handleConfirmationMessage(event.target, () => markPageAsRead()));
     onClick("a[data-toggle-status]", (event) => handleEntryStatus("next", event.target));
+    onClick("a[data-save-credential]", (event) => handleSaveCredential(event.target))
 
     onClick("a[data-confirm]", (event) => handleConfirmationMessage(event.target, (url, redirectURL) => {
         let request = new RequestBuilder(url);

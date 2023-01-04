@@ -122,6 +122,12 @@ func Serve(router *mux.Router, store *storage.Storage, pool *worker.Pool) {
 	uiRouter.HandleFunc("/integration/pocket/callback", handler.pocketCallback).Name("pocketCallback").Methods(http.MethodGet)
 	uiRouter.HandleFunc("/about", handler.showAboutPage).Name("about").Methods(http.MethodGet)
 
+	// Credentials pages.
+	uiRouter.HandleFunc("/credentials", handler.showCredentialsPage).Name("credentials").Methods(http.MethodGet)
+	uiRouter.HandleFunc("/credentials/{credentialID}/remove", handler.removeCredential).Name("removeCredential").Methods(http.MethodPost)
+	uiRouter.HandleFunc("/credentials/create", handler.showCreateCredentialPage).Name("createCredential").Methods(http.MethodGet)
+	uiRouter.HandleFunc("/credentials/save", handler.saveCredential).Name("saveCredential").Methods(http.MethodPost)
+
 	// Session pages.
 	uiRouter.HandleFunc("/sessions", handler.showSessionsPage).Name("sessions").Methods(http.MethodGet)
 	uiRouter.HandleFunc("/sessions/{sessionID}/remove", handler.removeSession).Name("removeSession").Methods(http.MethodPost)

@@ -4,7 +4,12 @@
 
 package request // import "miniflux.app/http/request"
 
-import "net/http"
+import (
+	"encoding/json"
+	"net/http"
+
+	"github.com/go-webauthn/webauthn/webauthn"
+)
 
 // ContextKey represents a context key.
 type ContextKey int
@@ -24,6 +29,7 @@ const (
 	FlashMessageContextKey
 	FlashErrorMessageContextKey
 	PocketRequestTokenContextKey
+	WebAuthnStateContextKey
 	ClientIPContextKey
 	GoogleReaderToken
 )
@@ -113,6 +119,16 @@ func PocketRequestToken(r *http.Request) string {
 // ClientIP returns the client IP address stored in the context.
 func ClientIP(r *http.Request) string {
 	return getContextStringValue(r, ClientIPContextKey)
+}
+
+func WebAuthnState(r *http.Request) webauthn.SessionData {
+	sessionDataJson := getContextStringValue(r, WebAuthnStateContextKey)
+	var sessionData webauthn.SessionData
+	err := json.Unmarshal([]byte(sessionDataJson), &sessionData)
+	if err != nil {
+		return webauthn.SessionData{}
+	}
+	return sessionData
 }
 
 func getContextStringValue(r *http.Request, key ContextKey) string {

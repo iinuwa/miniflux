@@ -5,8 +5,13 @@
 package session // import "miniflux.app/ui/session"
 
 import (
+	"encoding/json"
+
 	"miniflux.app/crypto"
+	"miniflux.app/logger"
 	"miniflux.app/storage"
+
+	"github.com/go-webauthn/webauthn/webauthn"
 )
 
 // Session handles session data.
@@ -61,6 +66,20 @@ func (s *Session) SetTheme(theme string) {
 // SetPocketRequestToken updates Pocket Request Token.
 func (s *Session) SetPocketRequestToken(requestToken string) {
 	s.store.UpdateAppSessionField(s.sessionID, "pocket_request_token", requestToken)
+}
+
+func (s *Session) SetWebAuthnSessionData(sessionData *webauthn.SessionData) {
+	logger.Info("yo! %v", sessionData)
+	json, err := json.Marshal(sessionData)
+	if err != nil {
+		logger.Error(err.Error())
+		return
+	}
+	err = s.store.UpdateAppSessionField(s.sessionID, "webauthn_state", string(json[:]))
+	if err != nil {
+		logger.Error(err.Error())
+		return
+	}
 }
 
 // New returns a new session handler.

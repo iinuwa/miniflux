@@ -633,4 +633,26 @@ var migrations = []func(tx *sql.Tx) error{
 		_, err = tx.Exec(sql)
 		return
 	},
+	func(tx *sql.Tx) (err error) {
+		sql := `
+			CREATE TABLE credentials (
+				id serial not null,
+				credential_id bytea not null,
+				public_key bytea not null,
+				attestation_type text,
+				authenticator_aaguid bytea,
+				authenticator_sign_count int default 0,
+				authenticator_clone_warning bool default false,
+				user_id int not null references users(id) on delete cascade,
+				description text not null,
+				last_used_at timestamp with time zone,
+				created_at timestamp with time zone default now(),
+				primary key(id),
+				unique (user_id, description)
+			);
+		`
+
+		_, err = tx.Exec(sql)
+		return
+	},
 }
