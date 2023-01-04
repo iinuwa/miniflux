@@ -657,7 +657,8 @@ function handleSaveCredential() {
                 publicKey: JSON.stringify(publicKey)
             })
             .withCallback((response) => {
-                console.log(response);
+                // TODO: Make this relative to base URL
+                window.location.href = "/credentials"
             });
         request.execute();
     })
