@@ -19,8 +19,9 @@ type Credential struct {
 // NewCredential initializes a new Credential.
 func NewCredential(userID int64, description string, credential *webauthn.Credential) *Credential {
 	return &Credential{
-		UserID:     userID,
-		Credential: *credential,
+		UserID:      userID,
+		Description: description,
+		Credential:  *credential,
 	}
 }
 
