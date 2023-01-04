@@ -86,7 +86,7 @@ func (s *Storage) CreateAPIKey(apiKey *model.APIKey) error {
 		&apiKey.CreatedAt,
 	)
 	if err != nil {
-		return fmt.Errorf(`store: unable to create category: %v`, err)
+		return fmt.Errorf(`store: unable to create API key: %v`, err)
 	}
 
 	return nil
