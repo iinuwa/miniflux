@@ -10,7 +10,7 @@ import (
 	"miniflux.app/locale"
 )
 
-// LocalizedError represents an error than could be translated to another language.
+// LocalizedError represents an error that could be translated to another language.
 type LocalizedError struct {
 	message string
 	args    []interface{}
