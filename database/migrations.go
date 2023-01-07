@@ -648,7 +648,8 @@ var migrations = []func(tx *sql.Tx) error{
 				last_used_at timestamp with time zone,
 				created_at timestamp with time zone default now(),
 				primary key(id),
-				unique (user_id, description)
+				unique (user_id, description),
+				unique (user_id, credential_id)
 			);
 		`
 
