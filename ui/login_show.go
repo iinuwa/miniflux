@@ -28,5 +28,6 @@ func (h *handler) showLoginPage(w http.ResponseWriter, r *http.Request) {
 
 	sess := session.New(h.store, request.SessionID(r))
 	view := view.New(h.tpl, r, sess)
+	view.Set("assertionOptionsJson", "")
 	html.OK(w, r, view.Render("login"))
 }

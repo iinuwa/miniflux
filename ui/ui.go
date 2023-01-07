@@ -154,7 +154,11 @@ func Serve(router *mux.Router, store *storage.Storage, pool *worker.Pool) {
 
 	// Authentication pages.
 	uiRouter.HandleFunc("/login", handler.checkLogin).Name("checkLogin").Methods(http.MethodPost)
+	uiRouter.HandleFunc("/login/credential", handler.showLoginChallengePage).Name("initChallenge").Methods(http.MethodGet)
+	uiRouter.HandleFunc("/login/credential", handler.showLoginChallengePage).Name("createChallenge").Methods(http.MethodPost)
+	uiRouter.HandleFunc("/login/credential/verify", handler.verifyChallenge).Name("verifyChallenge").Methods(http.MethodPost)
 	uiRouter.HandleFunc("/logout", handler.logout).Name("logout").Methods(http.MethodGet)
+
 	uiRouter.Handle("/", middleware.handleAuthProxy(http.HandlerFunc(handler.showLoginPage))).Name("login").Methods(http.MethodGet)
 
 	router.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) {

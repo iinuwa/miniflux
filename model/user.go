@@ -5,12 +5,9 @@
 package model // import "miniflux.app/model"
 
 import (
-	"encoding/binary"
 	"time"
 
 	"miniflux.app/timezone"
-
-	"github.com/go-webauthn/webauthn/webauthn"
 )
 
 // User represents a user in the system.
@@ -170,32 +167,4 @@ func (u Users) UseTimezone(tz string) {
 	for _, user := range u {
 		user.UseTimezone(tz)
 	}
-}
-
-// User ID according to the Relying Party
-func (u User) WebAuthnID() []byte {
-	b := make([]byte, 8)
-	binary.PutVarint(b, u.ID)
-	return b
-}
-
-// User Name according to the Relying Party
-func (u User) WebAuthnName() string {
-	return u.Username
-}
-
-// Display Name of the user
-func (u User) WebAuthnDisplayName() string {
-	return u.Username
-}
-
-// User's icon url
-func (u User) WebAuthnIcon() string {
-	return ""
-}
-
-// Credentials owned by the user
-func (u User) WebAuthnCredentials() []webauthn.Credential {
-	// TODO:
-	return nil
 }

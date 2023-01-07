@@ -134,6 +134,9 @@ func (m *middleware) isPublicRoute(r *http.Request) bool {
 	switch route.GetName() {
 	case "login",
 		"checkLogin",
+		"initChallenge",
+		"createChallenge",
+		"verifyChallenge",
 		"stylesheet",
 		"javascript",
 		"oauth2Redirect",

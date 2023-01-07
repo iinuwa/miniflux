@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-webauthn/webauthn/webauthn"
+	"miniflux.app/errors"
 	"miniflux.app/model"
 )
 
@@ -100,4 +101,54 @@ func (s *Storage) RemoveCredential(userID, credentialID int64) error {
 	}
 
 	return nil
+}
+
+func (s *Storage) UserCredentialsByUsername(username string) (*model.UserCredentials, error) {
+	user, err := s.UserByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, errors.NewLocalizedError("error.bad_credentials")
+	}
+	return s.fetchUserCredentials(user)
+}
+
+func (s *Storage) UserCredentialsByID(userID int64) (*model.UserCredentials, error) {
+	user, err := s.UserByID(userID)
+	if err != nil {
+		return nil, err
+	}
+	return s.fetchUserCredentials(user)
+}
+
+// SetCredentialUsedTimestamp updates the last used date of a credential.
+func (s *Storage) SetCredentialUsedTimestamp(userID int64, credentialID []byte) error {
+	query := `UPDATE credentials SET last_used_at=now() WHERE user_id=$1 and credential_id=$2`
+	_, err := s.db.Exec(query, userID, credentialID)
+	if err != nil {
+		return fmt.Errorf(`store: unable to update last used date for credential: %v`, err)
+	}
+
+	return nil
+}
+
+func (s *Storage) fetchUserCredentials(user *model.User) (*model.UserCredentials, error) {
+	creds, err := s.Credentials(user.ID)
+	if err != nil {
+		return nil, err
+	}
+	credentials := make([]webauthn.Credential, len(creds))
+	for i, c := range creds {
+		credentials[i] = c.Credential
+	}
+
+	userCredentials := &model.UserCredentials{
+		UserID:      user.ID,
+		Username:    user.Username,
+		Credentials: credentials,
+	}
+
+	return userCredentials, nil
+
 }

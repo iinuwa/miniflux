@@ -710,3 +710,125 @@ function base64URLStringToBuffer(base64URLString) {
   
     return buffer;
   }
+
+async function initializeCredentialAutofill() {
+    console.debug("initializing Credential Autofill")
+    if (
+        typeof window.PublicKeyCredential !== 'undefined'
+        && typeof window.PublicKeyCredential.isConditionalMediationAvailable === 'function'
+    ) {
+        const available = await PublicKeyCredential.isConditionalMediationAvailable();
+
+        if (available) {
+            // Query your server for options for `navigator.credentials.get()`
+            try {
+                const authOptions = getAuthenticationOptions();
+                // This call to `navigator.credentials.get()` is "set and forget."
+                // The Promise will only resolve if the user successfully interacts
+                // with the browser's autofill UI to select a passkey.
+                const autoFillResponse = await navigator.credentials.get({
+                mediation: "conditional",
+                publicKey: {
+                    ...authOptions,
+                    // see note about userVerification below
+                    userVerification: "preferred",
+                }
+                });
+                // Send the response to your server for verification.
+                const credentialResponse = await submitCredential(autoFillResponse)
+                // Authenticate the user if the response is valid.
+                await verifyAutoFillResponse(credentialResponse);
+            } catch (err) {
+                console.error('Error with conditional UI:', err);
+            }
+        }
+    }
+}
+
+function getAuthenticationOptions() {
+    const element = document.querySelector("form[data-credential-authentication-options]");
+    if (!element) {
+        return null;
+    }
+    const optionsRaw = element.dataset.credentialAuthenticationOptions;
+    if (!optionsRaw) {
+        return null;
+    }
+    const optionsJson = optionsRaw.replaceAll('&quot;', '"');
+    const options = JSON.parse(optionsJson);
+
+    console.debug(options.publicKey)
+    options.publicKey.challenge = base64URLStringToBuffer(options.publicKey.challenge, 64)
+    if (options.publicKey.allowCredentials) {
+        for (let cred of options.publicKey.allowCredentials) {
+            cred.id = base64URLStringToBuffer(cred.id);
+        }
+    }
+    return options;
+}
+
+function submitCredential(assertionResponse, username) {
+    return new Promise((resolve, _) => {
+        const element = document.querySelector("form[data-credential-authentication-url]");
+        const url = element.dataset.credentialAuthenticationUrl;
+        const request = new RequestBuilder(url)
+            .withHttpMethod("POST")
+            .withBody({
+                username: username, 
+                publicKeyCredential: JSON.stringify(assertionResponse),
+            })
+            .withCallback(async /** @type Response */ r => {
+                if (!r.ok) {
+                    try {
+                        j = await r.json();
+                        if (j.error) {
+                            console.error(j.error);
+                        }
+                    }
+                    catch { }
+                    reject(Response.redirect(window.location.href));
+                    return
+                }
+                resolve(r.json());
+            });
+        request.execute()
+    });
+}
+
+function handleAuthenticateCredential() {
+    const options = getAuthenticationOptions();
+    if (!options) {
+        return;
+    }
+
+    navigator.credentials.get(options)
+    .then(assertionResponseRaw => {
+        console.debug(assertionResponseRaw);
+        const assertionResponse = {};
+        assertionResponse.id = assertionResponseRaw.id;
+        assertionResponse.authenticatorAttachment = assertionResponseRaw.authenticatorAttachment;
+        assertionResponse.type = assertionResponseRaw.type;
+        assertionResponse.rawId = bufferToBase64URLString(assertionResponseRaw.rawId);
+        if (assertionResponseRaw.response) {
+            assertionResponse.response = {
+                ...assertionResponseRaw.response,
+                signature: bufferToBase64URLString(assertionResponseRaw.response.signature),
+                authenticatorData: bufferToBase64URLString(assertionResponseRaw.response.authenticatorData),
+                clientDataJSON: bufferToBase64URLString(assertionResponseRaw.response.clientDataJSON),
+                userHandle: bufferToBase64URLString(assertionResponseRaw.response.userHandle),
+            }
+        }
+        console.debug(assertionResponse)
+        // Send authentication status to server
+        const username = document.querySelector('input[name="username"]').value;
+        console.debug(username);
+        return submitCredential(assertionResponse, username);
+    })
+    .then(credentialResponse => {
+        window.location.assign(credentialResponse.returnUrl)
+
+    }).catch(function (err) {
+        // No acceptable authenticator or user refused.
+        console.error(err, "No authenticator found.");
+    });
+}

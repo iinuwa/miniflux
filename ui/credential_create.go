@@ -18,6 +18,12 @@ func (h *handler) showCreateCredentialPage(w http.ResponseWriter, r *http.Reques
 	sess := session.New(h.store, request.SessionID(r))
 	view := view.New(h.tpl, r, sess)
 
+	userCreds, err := h.store.UserCredentialsByID(request.UserID(r))
+	if err != nil {
+		html.ServerError(w, r, err)
+		return
+	}
+
 	user, err := h.store.UserByID(request.UserID(r))
 	if err != nil {
 		html.ServerError(w, r, err)
@@ -31,7 +37,7 @@ func (h *handler) showCreateCredentialPage(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	options, sessionData, err := web.BeginRegistration(user)
+	options, sessionData, err := web.BeginRegistration(userCreds)
 	if err != nil {
 		logger.Error("[UI:BeginRegistration] [ClientIP=%s] %v", clientIP, err)
 		html.OK(w, r, view.Render("create_credential"))
@@ -46,23 +52,13 @@ func (h *handler) showCreateCredentialPage(w http.ResponseWriter, r *http.Reques
 	optionsJson := string(optionsBytes[:])
 	optionsJsonEscaped := strings.ReplaceAll(optionsJson, `"`, "&quot;")
 	sess.SetWebAuthnSessionData(sessionData)
-	/*
-		registration := RegistrationOptions{
-			Challenge:       options.Response.Challenge.String(),
-			RPID:            options.Response.RelyingParty.ID,
-			RPDisplayName:   options.Response.RelyingParty.Name,
-			RPIcon:          options.Response.RelyingParty.Icon,
-			UserID:          user.ID,
-			UserName:        user.Username,
-			UserDisplayName: user.Username,
-		}
-	*/
+
 	view.Set("registrationOptionsJson", optionsJsonEscaped)
 	view.Set("form", &form.CredentialForm{})
 	view.Set("menu", "settings")
 	view.Set("user", user)
-	view.Set("countUnread", h.store.CountUnreadEntries(user.ID))
-	view.Set("countErrorFeeds", h.store.CountUserFeedsWithErrors(user.ID))
+	view.Set("countUnread", h.store.CountUnreadEntries(userCreds.UserID))
+	view.Set("countErrorFeeds", h.store.CountUserFeedsWithErrors(userCreds.UserID))
 
 	html.OK(w, r, view.Render("create_credential"))
 }

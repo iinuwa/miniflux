@@ -41,7 +41,7 @@ func (w CredentialForm) Validate() error {
 func NewCredentialForm(r *http.Request) (*CredentialForm, error) {
 	var credentialForm CredentialForm
 	if err := json_parser.NewDecoder(r.Body).Decode(&credentialForm); err != nil {
-		return &credentialForm, err
+		return nil, err
 	}
 	return &credentialForm, nil
 }
@@ -60,4 +60,35 @@ func NewCredentialOptions() (*webauthn.WebAuthn, error) {
 	})
 	return web, err
 
+}
+
+type CredentialChallengeForm struct {
+	Username string
+}
+
+func NewCredentialChallengeForm(r *http.Request) *CredentialChallengeForm {
+	return &CredentialChallengeForm{
+		Username: r.FormValue("username"),
+	}
+}
+
+func (c CredentialChallengeForm) Validate() error {
+	if c.Username == "" {
+		return errors.NewLocalizedError("error.fields_mandatory")
+	}
+	return nil
+}
+
+type CredentialChallengeVerifyForm struct {
+	Username            string `json:"username"`
+	PublicKeyCredential string `json:"publicKeyCredential"`
+}
+
+// NewCredentialForm returns a new CredentialForm.
+func NewCredentialChallengeVerifyForm(r *http.Request) (*CredentialChallengeVerifyForm, error) {
+	var c CredentialChallengeVerifyForm
+	if err := json_parser.NewDecoder(r.Body).Decode(&c); err != nil {
+		return nil, err
+	}
+	return &c, nil
 }
